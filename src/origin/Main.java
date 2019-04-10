@@ -7,7 +7,7 @@ import processing.core.PVector;
 public class Main extends PApplet {
     PeasyCam cam;
     PVector [][] globe;
-    int total = 20;
+    int total = 50;
 
     public void settings(){
         size(600,600, P3D);
@@ -28,9 +28,9 @@ public class Main extends PApplet {
         float r = 200;
 
         for(int i = 0; i < total+1; i++){
-            float lat = map(i, 0, total, -HALF_PI, HALF_PI);
+            float lat = map(i, 0, total, 0, PI);
             for(int j = 0; j < total+1; j++){
-                float lon = map(j, 0, total, -PI, PI);
+                float lon = map(j, 0, total, 0, TWO_PI);
 
                 float x = r * sin(lon) * cos(lat);
                 float y = r * sin(lon) * sin(lat);
