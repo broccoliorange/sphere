@@ -2,9 +2,39 @@ package origin;
 
 import peasy.PeasyCam;
 import processing.core.PApplet;
+import processing.core.PGraphics;
+import processing.core.PImage;
 import processing.core.PVector;
 
 public class Main extends PApplet {
+
+    PGraphics bufrImg;
+    PImage srcImg;  //原画
+    PImage clipImg;  //処理範囲のクリップ画
+    PImage backImg;  //背景画
+    PGraphics distImg;  //レンズ歪みをかけた画
+    PGraphics prevSphereImg;  //
+    //PShape distSphere;  //distImgを貼り付ける球
+    //PGraphics maskImg;  //仕上げスムージングのためのマスク
+
+    int scrnShortSide;
+    int lensWidth;
+    int lensHeight;
+    int _clipEdgeWidth;
+    int _clipEdgeHeight;
+
+    float[] posX;
+    float[] posY;
+    float[] posU;
+    float[] posV;
+
+    float[] posXi;
+    float[] posYi;
+
+    int[] vertexes;
+
+    int num = 24;  //distImg分割数
+
     PeasyCam cam;
     PVector [][] globe;
     int total = 50;
@@ -14,6 +44,23 @@ public class Main extends PApplet {
     }
 
     public void setup(){
+        bufrImg = createGraphics(capImg.width, capImg.height, P2D);
+        srcImg = createImage(width, height, RGB);
+        backImg = createImage(width, height, RGB);
+
+        scrnShortSide = min(width, height);
+        lensWidth = scrnShortSide;
+        lensHeight = scrnShortSide;
+
+        clipImg = createImage(scrnShortSide, scrnShortSide, RGB);
+        distImg = createGraphics(scrnShortSide * 2, scrnShortSide, P3D);
+        prevSphereImg = createGraphics(scrnShortSide, scrnShortSide, P3D);
+        distSphere = createShape(SPHERE, scrnShortSide * 0.5F);
+        //maskImg = createGraphics(width,height,P2D);
+        saveImg = createImage(width, height, RGB);
+
+        generateMesh();
+
         cam = new PeasyCam(this,500);
         globe = new PVector[total+1][total+1];
     }
@@ -62,7 +109,7 @@ public class Main extends PApplet {
 
     }
 
-/*
+
     public void generateMesh() {
         posX = new float[(num + 1) * (num + 1)];
         posY = new float[(num + 1) * (num + 1)];
@@ -161,7 +208,7 @@ public class Main extends PApplet {
         distImg.endDraw();
     }
 
- */
+
 
     public static void main(String[] args){
         PApplet.main("origin.Main");
