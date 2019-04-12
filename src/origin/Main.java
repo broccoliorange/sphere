@@ -1,10 +1,7 @@
 package origin;
 
 import peasy.PeasyCam;
-import processing.core.PApplet;
-import processing.core.PGraphics;
-import processing.core.PImage;
-import processing.core.PVector;
+import processing.core.*;
 
 public class Main extends PApplet {
 
@@ -15,7 +12,7 @@ public class Main extends PApplet {
     PImage backImg;  //背景画
     PGraphics distImg;  //レンズ歪みをかけた画
     PGraphics prevSphereImg;  //
-    //PShape distSphere;  //distImgを貼り付ける球
+    PShape distSphere;  //distImgを貼り付ける球
     //PGraphics maskImg;  //仕上げスムージングのためのマスク
     //PImage saveImg;
     PImage loadImg;
@@ -37,10 +34,17 @@ public class Main extends PApplet {
     int[] vertexes;
 
     int num = 24;  //distImg分割数
+    float sphereDiaR = 1;
+    int backBlur = 8;
+    boolean upright = true;
+    float clipPosX;
+    float clipPosY;
 
     PeasyCam cam;
     PVector [][] globe;
-    int total = 50;
+    int total = 75;
+    float m = 0;
+    float mchange = 0;
 
     public void settings(){
         size(1280,578, P3D);
@@ -48,7 +52,7 @@ public class Main extends PApplet {
 
     public void setup(){
         loadImg = loadImage("colorbar.jpg");
-        bufrImg = createGraphics(capImg.width, capImg.height, P2D);
+        bufrImg = createGraphics(width, height, P2D);
         srcImg = createImage(width, height, RGB);
         backImg = createImage(width, height, RGB);
 
@@ -59,9 +63,14 @@ public class Main extends PApplet {
         clipImg = createImage(scrnShortSide, scrnShortSide, RGB);
         distImg = createGraphics(scrnShortSide * 2, scrnShortSide, P3D);
         prevSphereImg = createGraphics(scrnShortSide, scrnShortSide, P3D);
-        distSphere = createShape(SPHERE, scrnShortSide * 0.5F);
+
+
+
         //maskImg = createGraphics(width,height,P2D);
         //saveImg = createImage(width, height, RGB);
+
+        clipPosX = (width - lensWidth - 1) / 2;
+        clipPosY = (height - lensHeight - 1) / 2;
 
         generateMesh();
 
@@ -69,46 +78,71 @@ public class Main extends PApplet {
         globe = new PVector[total+1][total+1];
     }
 
+    float a = 1;
+    float b = 1;
+
+    public float supershape(float theta, float m, float n1, float n2, float n3){
+       float t1 = abs((1/a) * cos(m * theta / 4));
+       t1 = pow(t1, n2);
+       float t2 = abs((1/b) * sin(m * theta / 4));
+       t2 = pow(t2, n3);
+       float t3 = t1 + t2;
+       float r = pow(t3, -1 / n1);
+        return r;
+    }
+
     public void draw(){
+
+        m = map(sin(mchange), -1, 1, 0, 7);
+        mchange += 0.05;
+
         background(0);
 
         lights();
         //translate(width/2,height/2);
         //sphere(200);
 
+        //球の定義：ここから
+        distSphere = createShape();
         float r = 200;
-
         for(int i = 0; i < total+1; i++){
-            float lat = map(i, 0, total, 0, PI);
+            float lat = map(i, 0, total, -HALF_PI, HALF_PI);
+            float r2 = supershape(lat,m,0.2F, 1.7F, 1.7F);
             for(int j = 0; j < total+1; j++){
-                float lon = map(j, 0, total, 0, TWO_PI);
+                float lon = map(j, 0, total, -PI, PI);
+                float r1 = supershape(lon,m,0.2F, 1.7F, 1.7F);
 
-                float x = r * sin(lon) * cos(lat);
-                float y = r * sin(lon) * sin(lat);
-                float z = r * cos(lon);
+                float x = r * r1 * cos(lon) * r2 * cos(lat);
+                float y = r * r1 * sin(lon) * r2 *cos(lat);
+                float z = r * r2 * sin(lat);
                 globe[i][j] = new PVector(x,y,z);
             }
         }
 
+        distSphere.stroke(255);
+        distSphere.fill(255);
         for(int i = 0; i < total; i++){
-            beginShape(QUAD_STRIP);
+            distSphere.beginShape(QUAD_STRIP);
             for(int j = 0; j < total+1; j++){
                 PVector v1 = globe[i][j];
                 PVector v2 = globe[i+1][j];
-                stroke(255);
-                strokeWeight(2);
+                distSphere.stroke(255);
+                distSphere.strokeWeight(2);
 
                 if(i % 2 == 0){
-                    vertex(v1.x, v1.y, v1.z);
-                    vertex(v2.x, v2.y, v2.z);
+                    distSphere.vertex(v1.x, v1.y, v1.z);
+                    distSphere.vertex(v2.x, v2.y, v2.z);
                 }else{
-                    vertex(v2.x, v2.y, v2.z);
-                    vertex(v1.x, v1.y, v1.z);
+                    distSphere.vertex(v2.x, v2.y, v2.z);
+                    distSphere.vertex(v1.x, v1.y, v1.z);
                 }
 
             }
-            endShape();
+            distSphere.endShape();
         }
+        //球の定義：ここまで
+        shape(distSphere);
+
 
     }
 
@@ -241,7 +275,7 @@ public class Main extends PApplet {
         updateSourceImage();
 
         backImg = srcImg.get();
-        backImg.filter(BLUR, backBlur.getValue());
+        backImg.filter(BLUR, backBlur);
         image(backImg, width / 2, height / 2);  //背景画をスクリーンに描く
 
         clippingImage();
@@ -251,14 +285,14 @@ public class Main extends PApplet {
 
         drawDistortion();                   //clipImgからレンズ歪みの画像を作ってdistImgとする
 
-        float ratio = sphereDiaR.getValue();
+        float ratio = sphereDiaR;
         distSphere.scale(ratio);
         distSphere.setTexture(distImg);           //球にdistImgを貼ってスクリーンに上書きする
         distSphere.setStrokeWeight(0);
         pushMatrix();
         translate(width / 2, height / 2);
         rotateY(PI);
-        if (!lp_upright.getState()) {
+        if (!upright) {
             rotateZ(PI);
         }
         sphereDetail(24);
@@ -276,10 +310,27 @@ public class Main extends PApplet {
         mask(maskImg);
 */
 
-        if (!lp_finishBlur.getState()) {
-            filter(BLUR, 1);
-        }
+        //if (!lp_finishBlur.getState()) {
+        //    filter(BLUR, 1);
+        //}
 
+    }
+
+    public void clippingImage(){
+
+        int left = (int) map(clipPosX - (width - bufrImg.width)/2,
+                0, bufrImg.width, 0, srcImg.width);
+        int top = (int) map(clipPosY - (height - bufrImg.height)/2,
+                0, bufrImg.height, 0, srcImg.height);
+        _clipEdgeWidth = (int) map( lensWidth,
+                0,  bufrImg.width, 0, srcImg.width );  //（注）modelBrown()でも使用
+        _clipEdgeHeight = (int) map( lensHeight,
+                0, bufrImg.height, 0, srcImg.height);  //（注）modelBrown()でも使用
+
+        clipImg = srcImg.get(left, top, _clipEdgeWidth, _clipEdgeHeight);
+
+        //hint(DISABLE_DEPTH_TEST);  //test code
+        //image(clipImg,width/2, height/2);  //test code
     }
 
     public static void main(String[] args){
