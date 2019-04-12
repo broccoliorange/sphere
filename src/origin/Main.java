@@ -8,6 +8,7 @@ import processing.core.PVector;
 
 public class Main extends PApplet {
 
+
     PGraphics bufrImg;
     PImage srcImg;  //原画
     PImage clipImg;  //処理範囲のクリップ画
@@ -16,6 +17,8 @@ public class Main extends PApplet {
     PGraphics prevSphereImg;  //
     //PShape distSphere;  //distImgを貼り付ける球
     //PGraphics maskImg;  //仕上げスムージングのためのマスク
+    //PImage saveImg;
+    PImage loadImg;
 
     int scrnShortSide;
     int lensWidth;
@@ -40,10 +43,11 @@ public class Main extends PApplet {
     int total = 50;
 
     public void settings(){
-        size(600,600, P3D);
+        size(1280,578, P3D);
     }
 
     public void setup(){
+        loadImg = loadImage("colorbar.jpg");
         bufrImg = createGraphics(capImg.width, capImg.height, P2D);
         srcImg = createImage(width, height, RGB);
         backImg = createImage(width, height, RGB);
@@ -57,7 +61,7 @@ public class Main extends PApplet {
         prevSphereImg = createGraphics(scrnShortSide, scrnShortSide, P3D);
         distSphere = createShape(SPHERE, scrnShortSide * 0.5F);
         //maskImg = createGraphics(width,height,P2D);
-        saveImg = createImage(width, height, RGB);
+        //saveImg = createImage(width, height, RGB);
 
         generateMesh();
 
@@ -101,7 +105,6 @@ public class Main extends PApplet {
                     vertex(v2.x, v2.y, v2.z);
                     vertex(v1.x, v1.y, v1.z);
                 }
-
 
             }
             endShape();
@@ -208,7 +211,76 @@ public class Main extends PApplet {
         distImg.endDraw();
     }
 
+    public void updateSourceImage(){
+        bufrImg.beginDraw();
+        bufrImg.clear();  //clear()はPGraphicsクラスのメソッド
+        bufrImg.imageMode(CENTER);
+        bufrImg.image(loadImg,bufrImg.width/2, bufrImg.height/2);
+        //if(isLoaded){
+        //    bufrImg.image(loadImg,bufrImg.width/2, bufrImg.height/2);
+        //}else{
+        //    bufrImg.image(capImg,bufrImg.width/2,bufrImg.height/2);
+        //}
+        bufrImg.endDraw();
 
+        srcImg = bufrImg.get();
+        //if(capImg.width > capImg.height){
+        //    srcImg.resize(width,0);  //resize()はPImageクラスのメソッド
+        //}else {
+        //    srcImg.resize(0, height);
+        //}
+        ////hint(DISABLE_DEPTH_TEST);  //test code
+        ////image(srcImg,width/2,height/2);  //test code
+    }
+
+    public void drawSoratama() {
+
+
+        background(0);  //デバッグのときコメントアウト
+
+        updateSourceImage();
+
+        backImg = srcImg.get();
+        backImg.filter(BLUR, backBlur.getValue());
+        image(backImg, width / 2, height / 2);  //背景画をスクリーンに描く
+
+        clippingImage();
+
+        initMesh();
+        modelBrown();
+
+        drawDistortion();                   //clipImgからレンズ歪みの画像を作ってdistImgとする
+
+        float ratio = sphereDiaR.getValue();
+        distSphere.scale(ratio);
+        distSphere.setTexture(distImg);           //球にdistImgを貼ってスクリーンに上書きする
+        distSphere.setStrokeWeight(0);
+        pushMatrix();
+        translate(width / 2, height / 2);
+        rotateY(PI);
+        if (!lp_upright.getState()) {
+            rotateZ(PI);
+        }
+        sphereDetail(24);
+        shape(distSphere);
+        popMatrix();
+        distSphere.scale(1 / ratio);
+
+/*
+        maskImg.beginDraw();
+        maskImg.fill(0);
+        float maskDia = scrnShortSide*sphereDiaR.getValue()*1.05F;
+        maskImg.ellipse(width/2,height/2,maskDia,maskDia);
+        maskImg.endDraw();
+
+        mask(maskImg);
+*/
+
+        if (!lp_finishBlur.getState()) {
+            filter(BLUR, 1);
+        }
+
+    }
 
     public static void main(String[] args){
         PApplet.main("origin.Main");
