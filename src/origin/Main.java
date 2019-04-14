@@ -13,6 +13,7 @@ public class Main extends PApplet {
     PGraphics distImg;  //レンズ歪みをかけた画
     PGraphics prevSphereImg;  //
     PShape distSphere;  //distImgを貼り付ける球
+    PShape testSphere;
     //PGraphics maskImg;  //仕上げスムージングのためのマスク
     //PImage saveImg;
     PImage loadImg;
@@ -33,7 +34,7 @@ public class Main extends PApplet {
 
     int[] vertexes;
 
-    int num = 24;  //distImg分割数
+    int num = 3;  //distImg分割数
     float sphereDiaR = 1;
     int backBlur = 8;
     boolean upright = true;
@@ -41,8 +42,8 @@ public class Main extends PApplet {
     float clipPosY;
 
     PeasyCam cam;
-    PVector [][] globe;
-    int total = 75;
+    PVector [] globe;
+    int total = 3;
     float m = 0;
     float mchange = 0;
 
@@ -51,6 +52,8 @@ public class Main extends PApplet {
     }
 
     public void setup(){
+        imageMode(CENTER);
+
         loadImg = loadImage("colorbar.jpg");
         bufrImg = createGraphics(width, height, P2D);
         srcImg = createImage(width, height, RGB);
@@ -64,6 +67,8 @@ public class Main extends PApplet {
         distImg = createGraphics(scrnShortSide * 2, scrnShortSide, P3D);
         prevSphereImg = createGraphics(scrnShortSide, scrnShortSide, P3D);
 
+        testSphere = createShape(SPHERE,100);
+
 
 
         //maskImg = createGraphics(width,height,P2D);
@@ -75,26 +80,16 @@ public class Main extends PApplet {
         generateMesh();
 
         cam = new PeasyCam(this,500);
-        globe = new PVector[total+1][total+1];
+
+        vertexes = new int[total * total * 4];
+        globe = new PVector[(total + 1) * (total + 1)];
+
+
+        textureMode(IMAGE);
     }
 
-    float a = 1;
-    float b = 1;
-
-    public float supershape(float theta, float m, float n1, float n2, float n3){
-       float t1 = abs((1/a) * cos(m * theta / 4));
-       t1 = pow(t1, n2);
-       float t2 = abs((1/b) * sin(m * theta / 4));
-       t2 = pow(t2, n3);
-       float t3 = t1 + t2;
-       float r = pow(t3, -1 / n1);
-        return r;
-    }
 
     public void draw(){
-
-        m = map(sin(mchange), -1, 1, 0, 7);
-        mchange += 0.05;
 
         background(0);
 
@@ -105,45 +100,88 @@ public class Main extends PApplet {
         //球の定義：ここから
         distSphere = createShape();
         float r = 200;
-        for(int i = 0; i < total+1; i++){
-            float lat = map(i, 0, total, -HALF_PI, HALF_PI);
-            float r2 = supershape(lat,m,0.2F, 1.7F, 1.7F);
-            for(int j = 0; j < total+1; j++){
-                float lon = map(j, 0, total, -PI, PI);
-                float r1 = supershape(lon,m,0.2F, 1.7F, 1.7F);
 
-                float x = r * r1 * cos(lon) * r2 * cos(lat);
-                float y = r * r1 * sin(lon) * r2 *cos(lat);
-                float z = r * r2 * sin(lat);
+
+        for (int i = 0, j = 0; i < total * total * 4; i += 4, j++) {
+            vertexes[i] = j + floor(j / total);                  //CW
+            vertexes[i + 1] = j + floor(j / total) + 1;
+            vertexes[i + 2] = j + floor(j / total) + 2 + total;
+            vertexes[i + 3] = j + floor(j / total) + 1 + total;
+        }
+
+        for(int i = 0; i < (total+1)*(total+1); i++){
+            float lat = map(floor(vertexes[i]/(total+1)), 0, total, 0, PI);
+            float lon = map(vertexes[i] % (total+1),0, total,0, TWO_PI);
+            float x = r * sin(lon) * cos(lat);
+            float y = r * sin(lon) * sin(lat);
+            float z = r * cos(lon);
+            globe[i] = new PVector(x,y,z);
+        }
+
+        distSphere.beginShape(QUADS);
+        for (int i = 0; i < vertexes.length; i++) {
+            if (i % 4 == 0) {
+                distSphere.texture(distImg);
+            }
+            int j = vertexes[i];
+            distSphere.vertex(globe[i].x, globe[i].y, globe[i].z, posU[j], posV[j]);
+        }
+        distSphere.endShape();
+
+/*
+        for(int i = 0; i < total+1; i++){
+            float lat = map(i, 0, total, 0, PI);
+            for(int j = 0; j < total+1; j++){
+                float lon = map(j, 0, total, 0, TWO_PI);
+
+                float x = r * sin(lon) * cos(lat);
+                float y = r * sin(lon) * sin(lat);
+                float z = r * cos(lon);
                 globe[i][j] = new PVector(x,y,z);
             }
         }
 
-        distSphere.stroke(255);
-        distSphere.fill(255);
+        //distSphere.stroke(255);
+        //distSphere.fill(255);
         for(int i = 0; i < total; i++){
-            distSphere.beginShape(QUAD_STRIP);
-            for(int j = 0; j < total+1; j++){
+            for(int j = 0; j < total; j++){
+
                 PVector v1 = globe[i][j];
-                PVector v2 = globe[i+1][j];
-                distSphere.stroke(255);
-                distSphere.strokeWeight(2);
+                PVector v2 = globe[i][j+1];
+                PVector v3 = globe[i+1][j+1];
+                PVector v4 = globe[i+1][j];
 
-                if(i % 2 == 0){
-                    distSphere.vertex(v1.x, v1.y, v1.z);
-                    distSphere.vertex(v2.x, v2.y, v2.z);
-                }else{
-                    distSphere.vertex(v2.x, v2.y, v2.z);
-                    distSphere.vertex(v1.x, v1.y, v1.z);
-                }
+                int k1 = i * 4 + j;
+                int k2 = i * 4 + (j + 1);
+                int k3 = (i + 1) * 4 + (j + 1);
+                int k4 = (i + 1) * 4 + j;
 
+                distSphere.beginShape(QUADS);
+
+                distSphere.texture(distImg);
+                //distSphere.stroke(255);
+                //distSphere.strokeWeight(2);
+                distSphere.vertex(v1.x, v1.y, v1.z, posU[k1], posV[k1]);
+                distSphere.vertex(v2.x, v2.y, v2.z, posU[k2], posV[k2]);
+                distSphere.vertex(v3.x, v3.y, v3.z, posU[k3], posV[k3]);
+                distSphere.vertex(v4.x, v4.y, v4.z, posU[k4], posV[k4]);
+
+
+                distSphere.endShape();
             }
-            distSphere.endShape();
         }
+*/
+
         //球の定義：ここまで
-        shape(distSphere);
 
+        //shape(distSphere);
 
+        drawSoratama();
+
+        //testSphere.setTexture(loadImg);
+        //shape(testSphere);
+
+        //noLoop();
     }
 
 
@@ -164,15 +202,11 @@ public class Main extends PApplet {
             posV[i] = posY[i];
         }
 
-        for (int i = 0, j = 0; i < num * num * 4; i += 4, j++) {
-            vertexes[i    ] = j + floor(j / num);                    //CCW
-            vertexes[i + 1] = j + floor(j / num) + 1 + num;
+        for (int i = 0, j = 0; i < num * num * 4; i += 4, j++){
+            vertexes[i    ] = j + floor(j / num);                  //CW
+            vertexes[i + 1] = j + floor(j / num) + 1;
             vertexes[i + 2] = j + floor(j / num) + 2 + num;
-            vertexes[i + 3] = j + floor(j / num) + 1;
-            //vertexes[i    ] = j + floor(j / num);                  //CW
-            //vertexes[i + 1] = j + floor(j / num) + 1;
-            //vertexes[i + 2] = j + floor(j / num) + 2 + num;
-            //vertexes[i + 3] = j + floor(j / num) + 1 + num;
+            vertexes[i + 3] = j + floor(j / num) + 1 + num;
         }
 
         posXi = new float[(num + 1) * (num + 1)];   //posX[],posY[],posU[],posV[]は上書きされて
@@ -270,35 +304,40 @@ public class Main extends PApplet {
     public void drawSoratama() {
 
 
-        background(0);  //デバッグのときコメントアウト
+        //background(0);  //デバッグのときコメントアウト
 
         updateSourceImage();
 
         backImg = srcImg.get();
         backImg.filter(BLUR, backBlur);
-        image(backImg, width / 2, height / 2);  //背景画をスクリーンに描く
+        //image(backImg, width / 2, height / 2);  //背景画をスクリーンに描く
+        image(backImg,0,0);
 
         clippingImage();
 
-        initMesh();
+        //initMesh();
         modelBrown();
 
-        drawDistortion();                   //clipImgからレンズ歪みの画像を作ってdistImgとする
+        drawDistortion();              //clipImgからレンズ歪みの画像を作ってdistImgとす
 
-        float ratio = sphereDiaR;
-        distSphere.scale(ratio);
-        distSphere.setTexture(distImg);           //球にdistImgを貼ってスクリーンに上書きする
-        distSphere.setStrokeWeight(0);
+
+        //float ratio = sphereDiaR;
+        //distSphere.scale(ratio);
+        //distSphere.setTexture(distImg);           //球にdistImgを貼ってスクリーンに上書きする
+        image(distImg,0,0);
+        //testSphere.setTexture(distImg);
+     //   distSphere.setStrokeWeight(0);
         pushMatrix();
-        translate(width / 2, height / 2);
+        //translate(width / 2, height / 2);
         rotateY(PI);
-        if (!upright) {
-            rotateZ(PI);
-        }
-        sphereDetail(24);
+        //if (!upright) {
+        //    rotateZ(PI);
+        //}
+        //sphereDetail(24);
         shape(distSphere);
+        //shape(testSphere);
         popMatrix();
-        distSphere.scale(1 / ratio);
+        //distSphere.scale(1 / ratio);
 
 /*
         maskImg.beginDraw();
