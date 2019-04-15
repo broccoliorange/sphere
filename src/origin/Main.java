@@ -35,7 +35,7 @@ public class Main extends PApplet {
     int[] vertexes;
     int[] vertexes2;
 
-    int num = 3;  //distImg分割数
+    int num = 20;  //distImg分割数
     float sphereDiaR = 1;
     int backBlur = 8;
     boolean upright = true;
@@ -44,6 +44,7 @@ public class Main extends PApplet {
 
     PeasyCam cam;
     PVector [] globe;
+    PVector [] plain;
     int total = 20;
     float m = 0;
     float mchange = 0;
@@ -78,15 +79,16 @@ public class Main extends PApplet {
         clipPosX = (width - lensWidth - 1) / 2;
         clipPosY = (height - lensHeight - 1) / 2;
 
-       // generateMesh();
+        generateMesh();
 
         cam = new PeasyCam(this,500);
 
         vertexes2 = new int[total * total * 4];
         globe = new PVector[total * total * 4];
+        plain = new PVector[total * total * 4];
 
 
-        textureMode(IMAGE);
+        //textureMode(IMAGE);
     }
 
 
@@ -112,28 +114,33 @@ public class Main extends PApplet {
 
         for(int i = 0; i < vertexes2.length; i++){
             float lat = map(floor(vertexes2[i]/(total+1)), 0, total, 0, PI);
-            float lon = map(vertexes2[i] % (total+1),0, total,0, TWO_PI);
+            float lon = map(vertexes2[i] % (total+1),0, total,0,TWO_PI);
             float x = r * sin(lon) * cos(lat);
             float y = r * sin(lon) * sin(lat);
             float z = r * cos(lon);
             int j = vertexes2[i];
             globe[j] = new PVector(x,y,z);
+            float u = map(floor(vertexes2[i]/(total+1)),0, total, 0,loadImg.width);
+            float v = map(vertexes2[i] % (total+1),0, total,0, loadImg.height);
+            plain[j] = new PVector(u,v);
         }
 
         distSphere.beginShape(QUADS);
         for (int i = 0; i < vertexes2.length; i++) {
             if (i % 4 == 0) {
-                //distSphere.texture(distImg);
+                distSphere.texture(loadImg);
             }
             int j = vertexes2[i];
-            //distSphere.vertex(globe[i].x, globe[i].y, globe[i].z, posU[j], posV[j]);
-            distSphere.vertex(globe[j].x, globe[j].y, globe[j].z);
+            distSphere.vertex(globe[j].x, globe[j].y, globe[j].z, plain[j].x, plain[j].y);
+            //distSphere.vertex(globe[j].x, globe[j].y, globe[j].z);
+            //println("posU=",posU[j]);
         }
         distSphere.endShape();
 
         //球の定義：ここまで
 
-          shape(distSphere);
+        image(loadImg,0,0);
+        shape(distSphere);
 
         //drawSoratama();
 
