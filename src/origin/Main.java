@@ -33,6 +33,7 @@ public class Main extends PApplet {
     float[] posYi;
 
     int[] vertexes;
+    int[] vertexes2;
 
     int num = 3;  //distImg分割数
     float sphereDiaR = 1;
@@ -43,7 +44,7 @@ public class Main extends PApplet {
 
     PeasyCam cam;
     PVector [] globe;
-    int total = 3;
+    int total = 20;
     float m = 0;
     float mchange = 0;
 
@@ -77,12 +78,12 @@ public class Main extends PApplet {
         clipPosX = (width - lensWidth - 1) / 2;
         clipPosY = (height - lensHeight - 1) / 2;
 
-        generateMesh();
+       // generateMesh();
 
         cam = new PeasyCam(this,500);
 
-        vertexes = new int[total * total * 4];
-        globe = new PVector[(total + 1) * (total + 1)];
+        vertexes2 = new int[total * total * 4];
+        globe = new PVector[total * total * 4];
 
 
         textureMode(IMAGE);
@@ -102,81 +103,39 @@ public class Main extends PApplet {
         float r = 200;
 
 
-        for (int i = 0, j = 0; i < total * total * 4; i += 4, j++) {
-            vertexes[i] = j + floor(j / total);                  //CW
-            vertexes[i + 1] = j + floor(j / total) + 1;
-            vertexes[i + 2] = j + floor(j / total) + 2 + total;
-            vertexes[i + 3] = j + floor(j / total) + 1 + total;
+        for (int i = 0, j = 0; i < vertexes2.length; i += 4, j++) {
+            vertexes2[i + 0] = j + floor(j / total);                  //CW
+            vertexes2[i + 1] = j + floor(j / total) + 1;
+            vertexes2[i + 2] = j + floor(j / total) + 2 + total;
+            vertexes2[i + 3] = j + floor(j / total) + 1 + total;
         }
 
-        for(int i = 0; i < (total+1)*(total+1); i++){
-            float lat = map(floor(vertexes[i]/(total+1)), 0, total, 0, PI);
-            float lon = map(vertexes[i] % (total+1),0, total,0, TWO_PI);
+        for(int i = 0; i < vertexes2.length; i++){
+            float lat = map(floor(vertexes2[i]/(total+1)), 0, total, 0, PI);
+            float lon = map(vertexes2[i] % (total+1),0, total,0, TWO_PI);
             float x = r * sin(lon) * cos(lat);
             float y = r * sin(lon) * sin(lat);
             float z = r * cos(lon);
-            globe[i] = new PVector(x,y,z);
+            int j = vertexes2[i];
+            globe[j] = new PVector(x,y,z);
         }
 
         distSphere.beginShape(QUADS);
-        for (int i = 0; i < vertexes.length; i++) {
+        for (int i = 0; i < vertexes2.length; i++) {
             if (i % 4 == 0) {
-                distSphere.texture(distImg);
+                //distSphere.texture(distImg);
             }
-            int j = vertexes[i];
-            distSphere.vertex(globe[i].x, globe[i].y, globe[i].z, posU[j], posV[j]);
+            int j = vertexes2[i];
+            //distSphere.vertex(globe[i].x, globe[i].y, globe[i].z, posU[j], posV[j]);
+            distSphere.vertex(globe[j].x, globe[j].y, globe[j].z);
         }
         distSphere.endShape();
 
-/*
-        for(int i = 0; i < total+1; i++){
-            float lat = map(i, 0, total, 0, PI);
-            for(int j = 0; j < total+1; j++){
-                float lon = map(j, 0, total, 0, TWO_PI);
-
-                float x = r * sin(lon) * cos(lat);
-                float y = r * sin(lon) * sin(lat);
-                float z = r * cos(lon);
-                globe[i][j] = new PVector(x,y,z);
-            }
-        }
-
-        //distSphere.stroke(255);
-        //distSphere.fill(255);
-        for(int i = 0; i < total; i++){
-            for(int j = 0; j < total; j++){
-
-                PVector v1 = globe[i][j];
-                PVector v2 = globe[i][j+1];
-                PVector v3 = globe[i+1][j+1];
-                PVector v4 = globe[i+1][j];
-
-                int k1 = i * 4 + j;
-                int k2 = i * 4 + (j + 1);
-                int k3 = (i + 1) * 4 + (j + 1);
-                int k4 = (i + 1) * 4 + j;
-
-                distSphere.beginShape(QUADS);
-
-                distSphere.texture(distImg);
-                //distSphere.stroke(255);
-                //distSphere.strokeWeight(2);
-                distSphere.vertex(v1.x, v1.y, v1.z, posU[k1], posV[k1]);
-                distSphere.vertex(v2.x, v2.y, v2.z, posU[k2], posV[k2]);
-                distSphere.vertex(v3.x, v3.y, v3.z, posU[k3], posV[k3]);
-                distSphere.vertex(v4.x, v4.y, v4.z, posU[k4], posV[k4]);
-
-
-                distSphere.endShape();
-            }
-        }
-*/
-
         //球の定義：ここまで
 
-        //shape(distSphere);
+          shape(distSphere);
 
-        drawSoratama();
+        //drawSoratama();
 
         //testSphere.setTexture(loadImg);
         //shape(testSphere);
