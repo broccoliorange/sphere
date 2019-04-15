@@ -114,14 +114,14 @@ public class Main extends PApplet {
 
         for(int i = 0; i < vertexes2.length; i++){
             float lat = map(floor(vertexes2[i]/(total+1)), 0, total, 0, PI);
-            float lon = map(vertexes2[i] % (total+1),0, total,0,TWO_PI);
+            float lon = map(vertexes2[i] % (total+1),0, total,0, PI);
             float x = r * sin(lon) * cos(lat);
             float y = r * sin(lon) * sin(lat);
             float z = r * cos(lon);
             int j = vertexes2[i];
             globe[j] = new PVector(x,y,z);
-            float u = map(floor(vertexes2[i]/(total+1)),0, total, 0,loadImg.width);
-            float v = map(vertexes2[i] % (total+1),0, total,0, loadImg.height);
+            float v = map(floor(vertexes2[i]/(total+1)),0, total, 0,loadImg.height);
+            float u = map(vertexes2[i] % (total+1),0, total,0, loadImg.width);
             plain[j] = new PVector(u,v);
         }
 
@@ -132,15 +132,17 @@ public class Main extends PApplet {
             }
             int j = vertexes2[i];
             distSphere.vertex(globe[j].x, globe[j].y, globe[j].z, plain[j].x, plain[j].y);
-            //distSphere.vertex(globe[j].x, globe[j].y, globe[j].z);
-            //println("posU=",posU[j]);
         }
         distSphere.endShape();
 
         //球の定義：ここまで
 
         image(loadImg,0,0);
+        pushMatrix();
+        rotateX(HALF_PI);
+        rotateY(HALF_PI);
         shape(distSphere);
+        popMatrix();
 
         //drawSoratama();
 
