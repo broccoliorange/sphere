@@ -66,21 +66,16 @@ public class Main extends PApplet {
 
     public class Jelly {
 
-        PVector[] plain;
-        Vec3D[] globe;
         int total = 20;
         int[] vertexes2;
-
+        PVector[] plain;
         Node[] nodes;
         Connection[] connections;
-
 
         Jelly() {
 
             vertexes2 = new int[total * total * 4];
-            globe = new Vec3D[total * total * 4];
             plain = new PVector[total * total * 4];
-
             nodes = new Node[total * total * 4];
             connections = new Connection[total * total * 4];
             float strength = 0.1F;
@@ -103,7 +98,7 @@ public class Main extends PApplet {
                 float y = r * sin(lon) * sin(lat);
                 float z = r * cos(lon);
                 int j = vertexes2[i];
-                globe[j] = new Vec3D(x,y,z);
+                nodes[j] = new Node(new Vec3D(x,y,z));
                 float v = map(floor(vertexes2[i]/(total+1)),0, total, 0,loadImg.height);
                 float u = map(vertexes2[i] % (total+1),0, total,0, loadImg.width);
                 plain[j] = new PVector(u,v);
@@ -112,13 +107,9 @@ public class Main extends PApplet {
 
             for (int i = 0; i < vertexes2.length; i += 4) {
                 int j = vertexes2[i];
-                nodes[j] = new Node(globe[j]);
                 int k = vertexes2[i + 1];
-                nodes[k] = new Node(globe[k]);
                 int l = vertexes2[i + 2];
-                nodes[l] = new Node(globe[l]);
                 int m = vertexes2[i + 3];
-                nodes[m] = new Node(globe[m]);
 
                 physics.addParticle(nodes[j]);
                 physics.addParticle(nodes[k]);
