@@ -2,11 +2,15 @@ package origin;
 
 import peasy.PeasyCam;
 import processing.core.*;
+import toxi.geom.Vec3D;
+import toxi.physics3d.VerletParticle3D;
+import toxi.physics3d.VerletPhysics3D;
+import toxi.physics3d.VerletSpring3D;
 
 
 public class Main extends PApplet {
 
-    VerletPhysics
+    VerletPhysics3D physics;
 
     PImage loadImg;
     PShape halfSphere;
@@ -24,6 +28,8 @@ public class Main extends PApplet {
     }
 
     public void setup(){
+        physics = new VerletPhysics3D();
+
         imageMode(CENTER);
 
         loadImg = loadImage("colorbar.jpg");
@@ -39,6 +45,7 @@ public class Main extends PApplet {
 
 
     public void draw(){
+        physics.update();
 
         background(0);
 
@@ -98,6 +105,19 @@ public class Main extends PApplet {
         //noLoop();
     }
 
+    public class Node extends VerletParticle3D{
+
+        Node(Vec3D loc){
+            super(loc);
+        }
+    }
+
+    public  class  Connection extends VerletSpring3D {
+
+        Connection(Node n1, Node n2, float len, float strength){
+            super(n1, n2, len, strength);
+        }
+    }
 
 
 
