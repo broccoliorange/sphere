@@ -1,0 +1,10 @@
+<component name="libraryTable">
+  <library name="library1">
+    <CLASSES>
+      <root url="file://$USER_HOME$/Documents/Processing/libraries/toxiclibs/library" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+    <jarDirectory url="file://$USER_HOME$/Documents/Processing/libraries/toxiclibs/library" recursive="false" />
+  </library>
+</component>

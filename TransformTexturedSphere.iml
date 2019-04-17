@@ -10,5 +10,6 @@
     <orderEntry type="library" name="org.processing:core:3.3.7" level="project" />
     <orderEntry type="library" name="library" level="project" />
     <orderEntry type="library" name="peasy-math" level="project" />
+    <orderEntry type="library" name="library1" level="project" />
   </component>
 </module>
