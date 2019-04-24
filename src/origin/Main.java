@@ -3,9 +3,7 @@ package origin;
 import peasy.PeasyCam;
 import processing.core.*;
 import toxi.geom.Vec3D;
-import toxi.physics3d.VerletParticle3D;
-import toxi.physics3d.VerletPhysics3D;
-import toxi.physics3d.VerletSpring3D;
+import toxi.physics3d.*;
 import toxi.physics3d.behaviors.AttractionBehavior3D;
 
 import java.util.ArrayList;
@@ -22,7 +20,9 @@ public class Main extends PApplet {
     float aStrength;
     float angle;
 
-    //PeasyCam cam;
+    float ax,ay;
+
+    PeasyCam cam;
 
 
 
@@ -38,24 +38,27 @@ public class Main extends PApplet {
         loadImg = loadImage("colorbar.jpg");
 
         j = new Jelly();
+        ax = 0;
+        ay = 0;
 
-
-        //cam = new PeasyCam(this,500);
+        cam = new PeasyCam(this,500);
     }
 
 
     public void draw(){
         background(0);
         physics.update();
+
         attractor = new Attractor( new Vec3D(0, 0, 0), aStrength);
-
+        ax += random(5);
+        ay += random(5);
+        aStrength = -0.0001F;
+        //aStrength = map(sin(angle), -1,1,0.0F, 0.1F);
+        //angle += HALF_PI/1000;
+        //attractor.lock();
         lights();
-        translate(width/2,height/2);
+        //translate(width/2,height/2);
         j.display();
-
-        aStrength = -0.1F;
-        //aStrength = map(sin(angle), -1,1,-0.001F, 0.001F);
-        //angle += 0.01;
 
 
     }
@@ -64,13 +67,33 @@ public class Main extends PApplet {
 
         Node(Vec3D loc){
             super(loc);
+
         }
     }
 
-    public  class  Connection extends VerletSpring3D {
+
+
+    public  class  Connection extends VerletConstrainedSpring3D {
+        float x1,y1,z1,x2,y2,z2;
 
         Connection(Node n1, Node n2, float len, float strength){
+
             super(n1, n2, len, strength);
+
+            x1 = n1.x;
+            y1 = n1.y;
+            z1 = n1.z;
+            x2 = n2.x;
+            y2 = n2.y;
+            z2 = n2.z;
+        }
+
+        void display(){
+            beginShape();
+            stroke(255);
+            vertex(x1,y1,z1);
+            vertex(x2,y2,z2);
+            endShape();
         }
     }
 
@@ -94,7 +117,7 @@ public class Main extends PApplet {
 
         PShape halfSphere;
 
-        int total = 20;
+        int total = 7;
         int[] vertexes2;
         PVector[] plain;
         Node[] nodes;
@@ -106,7 +129,7 @@ public class Main extends PApplet {
             plain = new PVector[total * total * 4];
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
-            float cStrength = 0.95F;
+            float cStrength = 0.1F;
 
             //頂点の定義(CW)
             float r = 200;
@@ -118,13 +141,13 @@ public class Main extends PApplet {
                 vertexes2[i + 3] = j + floor(j / total) + 1 + total;
             }
 
-            //半頂点番号→球表面の座標、テクスチャ画像の座標
+            //頂点番号→球表面の座標、テクスチャ画像の座標
             for(int i = 0; i < vertexes2.length; i++){
                 float lat = map(floor(vertexes2[i]/(total+1)), 0, total, 0, PI);
-                float lon = map(vertexes2[i] % (total+1),0, total,0, PI);
-                float x = r * sin(lon) * cos(lat);
-                float y = r * sin(lon) * sin(lat);
-                float z = r * cos(lon);
+                float lon = map(vertexes2[i] % (total+1),0, total,0, TWO_PI);
+                float x = r * sin(lat) * cos(lon);
+                float y = r * sin(lat) * sin(lon);
+                float z = r * cos(lat);
                 int j = vertexes2[i];
                 nodes[j] = new Node( new Vec3D(x,y,z));
 
@@ -133,9 +156,10 @@ public class Main extends PApplet {
                 plain[j] = new PVector(u,v);
             }
 
-            //半球頂点とノード、ノード間コネクションの関連付け、半球切り口のロック
+            //球頂点とノード、ノード間コネクションの関連付け
             for(int j = 0; j < (total+1)*(total+1); j++){
                 physics.addParticle( nodes[j]);
+
             }
 
             for (int i = 0; i < vertexes2.length; i += 4) {
@@ -144,41 +168,38 @@ public class Main extends PApplet {
                 int l = vertexes2[i + 2];
                 int m = vertexes2[i + 3];
 
+                if((k + 1) % (total + 1) == 0){
+                    nodes[k] = nodes[k - total];
+                    nodes[l] = nodes[l - total];
+                }
+
                 Vec3D left = nodes[k].sub(nodes[j]);
                 float dleft = left.magnitude();
                 Connection sleft = new Connection(nodes[j], nodes[k], dleft, cStrength);
+                physics.addSpring(sleft);
+                connections.add(sleft);
+                println("j=",j," k=",k,"nodes:",nodes[j],nodes[k]);
+                sleft.display();
+
                 Vec3D down = nodes[m].sub(nodes[j]);
                 float ddown = down.magnitude();
                 Connection sdown = new Connection(nodes[j], nodes[m], ddown, cStrength);
-
-                physics.addSpring(sleft);
-                connections.add(sleft);
                 physics.addSpring(sdown);
                 connections.add(sdown);
 
-                if(j >= 0 && j < total || j % (total +1) == 0){
-                    nodes[j].lock();
-                }
+                Vec3D diag = nodes[m].sub(nodes[k]);
+                float ddiag = diag.magnitude();
+                Connection sdiag = new Connection(nodes[k], nodes[m], ddiag, cStrength);
+                physics.addSpring(sdiag);
+                connections.add(sdiag);
 
-                if((k + 1) % (total + 1) == 0){
-                    Vec3D down2 = nodes[l].sub(nodes[k]);
-                    float ddown2 = down2.magnitude();
-                    Connection sdown2 = new Connection(nodes[k], nodes[l], ddown2, cStrength);
-                    physics.addSpring(sdown2);
-                    connections.add(sdown2);
-                    nodes[k].lock();
+                if(m >= total*(total +1)){
+                    Vec3D leftbtm = nodes[l].sub(nodes[m]);
+                    float dleftbtm = leftbtm.magnitude();
+                    Connection sleftbtm = new Connection(nodes[l], nodes[m], dleftbtm, cStrength);
+                    physics.addSpring(sleftbtm);
+                    connections.add(sleftbtm);
                 }
-
-                if(m >= total*(total + 1)){
-                    Vec3D left2 = nodes[l].sub(nodes[m]);
-                    float dleft2 = left2.magnitude();
-                    Connection sleft2 = new Connection(nodes[l], nodes[m], dleft2, cStrength);
-                    physics.addSpring(sleft2);
-                    connections.add(sleft2);
-                    nodes[m].lock();
-                }
-
-                nodes[(total + 1)*(total +1)-1].lock();
 
             }
         }
@@ -195,16 +216,19 @@ public class Main extends PApplet {
                         halfSphere.texture(loadImg);
                     }
                     int j = vertexes2[i];
+                    //if((j + 1) % (total +1) == 0){
+                    //    j = j - total;
+                    //}
                     halfSphere.vertex(nodes[j].x, nodes[j].y, nodes[j].z, plain[j].x, plain[j].y);
                 }
                 halfSphere.endShape();
 
-
-                pushMatrix();
-                rotateX(HALF_PI);
-                rotateY(HALF_PI);
+                //strokeWeight(0);
+                //pushMatrix();
+                //rotateX(HALF_PI);
+                //rotateY(HALF_PI);
                 shape(halfSphere);
-                popMatrix();
+                //popMatrix();
         }
 
     }
