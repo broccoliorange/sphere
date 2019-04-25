@@ -12,15 +12,9 @@ import java.util.ArrayList;
 public class Main extends PApplet {
 
     VerletPhysics3D physics;
-    Jelly j;
+    JellyBall jb;
 
     PImage loadImg;
-
-    Attractor attractor;
-    float aStrength;
-    float angle;
-
-    float ax,ay;
 
     PeasyCam cam;
 
@@ -37,9 +31,7 @@ public class Main extends PApplet {
 
         loadImg = loadImage("colorbar.jpg");
 
-        j = new Jelly();
-        ax = 0;
-        ay = 0;
+        jb = new JellyBall();
 
         cam = new PeasyCam(this,500);
     }
@@ -49,16 +41,10 @@ public class Main extends PApplet {
         background(0);
         physics.update();
 
-        attractor = new Attractor( new Vec3D(ax, ay, 0), aStrength);
-        ax += random(5);
-        ay += random(5);
-        //aStrength = -0.0001F;
-        aStrength = map(sin(angle), -1,1,-0.0001F, 0.0F);
-        angle += HALF_PI/1000;
-        attractor.lock();
+
         lights();
         //translate(width/2,height/2);
-        j.display();
+        jb.display();
 
 
     }
@@ -73,7 +59,7 @@ public class Main extends PApplet {
 
 
 
-    public  class  Connection extends VerletConstrainedSpring3D {
+    public  class  Connection extends VerletMinDistanceSpring3D {
 
         Connection(Node n1, Node n2, float len, float strength){
 
@@ -97,23 +83,23 @@ public class Main extends PApplet {
         }
     }
 
-    public class Jelly {
+    public class JellyBall {
 
-        PShape halfSphere;
+        PShape ball;
 
-        int total = 20;
+        int total = 50;
         int[] vertexes2;
         PVector[] plain;
         Node[] nodes;
         ArrayList<Connection> connections;
 
-        Jelly() {
+        JellyBall() {
 
             vertexes2 = new int[total * total * 4];
             plain = new PVector[total * total * 4];
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
-            float cStrength = 0.5F;
+            float cStrength = 0.99F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
             float r = 200;
@@ -189,35 +175,34 @@ public class Main extends PApplet {
                     physics.addSpring(sleftbtm);
                     connections.add(sleftbtm);
                 }
-
-             nodes[floor(total*total/2)].lock();
-
             }
+            //nodes[total+1].lock();
+            //nodes[floor((total+1)*total/2)].lock();
+            //nodes[total*total].lock();
         }
 
 
 
         void display(){
 
-                halfSphere = createShape();
+                ball = createShape();
 
-                halfSphere.beginShape(QUADS);
+                ball.beginShape(QUADS);
                 for (int i = 0; i < vertexes2.length; i++) {
                     if (i % 4 == 0) {
-                        halfSphere.texture(loadImg);
+                        ball.texture(loadImg);
                     }
                     int j = vertexes2[i];
                     if((j + 1) % (total + 1) == 0){ j -= total; }
-                    halfSphere.vertex(nodes[j].x, nodes[j].y, nodes[j].z, plain[j].x, plain[j].y);
+                    ball.vertex(nodes[j].x, nodes[j].y, nodes[j].z, plain[j].x, plain[j].y);
                 }
-                halfSphere.endShape();
+                ball.endShape();
 
                 //strokeWeight(0);
-                //pushMatrix();
-                //rotateX(HALF_PI);
-                //rotateY(HALF_PI);
-                shape(halfSphere);
-                //popMatrix();
+                pushMatrix();
+                rotateX(HALF_PI);
+                shape(ball);
+                popMatrix();
         }
 
     }
