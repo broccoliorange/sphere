@@ -14,6 +14,8 @@ public class Main extends PApplet {
     VerletPhysics3D physics;
     JellyBall jb;
 
+    int fc = 0;
+
     PImage loadImg;
 
     PeasyCam cam;
@@ -45,8 +47,10 @@ public class Main extends PApplet {
         lights();
         //translate(width/2,height/2);
         jb.display();
-
-
+        //fc ++;
+        //if(fc % 10==0){
+            jb.addNoise();
+        //}
     }
 
     public class Node extends VerletParticle3D{
@@ -59,7 +63,7 @@ public class Main extends PApplet {
 
 
 
-    public  class  Connection extends VerletMinDistanceSpring3D {
+    public  class  Connection extends VerletConstrainedSpring3D {
 
         Connection(Node n1, Node n2, float len, float strength){
 
@@ -67,21 +71,6 @@ public class Main extends PApplet {
         }
     }
 
-    public class Attractor extends VerletParticle3D{
-
-        float aStrength;
-
-        Attractor (Vec3D loc, float aStrength){
-            super(loc);
-            this.aStrength = aStrength;
-            physics.addParticle(this);
-            physics.addBehavior(new AttractionBehavior3D(this,width, aStrength));
-        }
-
-        void display(){
-
-        }
-    }
 
     public class JellyBall {
 
@@ -99,7 +88,7 @@ public class Main extends PApplet {
             plain = new PVector[total * total * 4];
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
-            float cStrength = 0.99F;
+            float cStrength = 0.9F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
             float r = 200;
@@ -181,30 +170,42 @@ public class Main extends PApplet {
             //nodes[total*total].lock();
         }
 
-
-
         void display(){
 
-                ball = createShape();
+            ball = createShape();
 
-                ball.beginShape(QUADS);
-                for (int i = 0; i < vertexes2.length; i++) {
-                    if (i % 4 == 0) {
-                        ball.texture(loadImg);
-                    }
-                    int j = vertexes2[i];
-                    if((j + 1) % (total + 1) == 0){ j -= total; }
-                    ball.vertex(nodes[j].x, nodes[j].y, nodes[j].z, plain[j].x, plain[j].y);
+            ball.beginShape(QUADS);
+            for (int i = 0; i < vertexes2.length; i++) {
+                if (i % 4 == 0) {
+                    ball.texture(loadImg);
                 }
-                ball.endShape();
+                int j = vertexes2[i];
+                if((j + 1) % (total + 1) == 0){ j -= total; }
+                ball.vertex(nodes[j].x, nodes[j].y, nodes[j].z, plain[j].x, plain[j].y);
+            }
+            ball.endShape();
 
-                //strokeWeight(0);
-                pushMatrix();
-                rotateX(HALF_PI);
-                shape(ball);
-                popMatrix();
+            //strokeWeight(0);
+            pushMatrix();
+            rotateZ(HALF_PI);
+            rotateY(HALF_PI);
+            shape(ball);
+            popMatrix();
         }
 
+        void addNoise(){
+            //ノード位置を撹乱する
+            for(int j = 0; j < (total+1)*(total+1); j++){
+                if( !((j+1)%(total+1)==0)){
+                    nodes[j].lock();
+                    Vec3D v = nodes[j].getNormalized();
+                    v.scaleSelf(map(noise(nodes[j].x,nodes[j].y,nodes[j].z),0,1,-7,10));
+                    nodes[j].addSelf(v);
+                    nodes[j].unlock();
+                }
+            }
+
+        }
     }
 
 
