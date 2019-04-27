@@ -47,10 +47,10 @@ public class Main extends PApplet {
         lights();
         //translate(width/2,height/2);
         jb.display();
-        //fc ++;
-        //if(fc % 10==0){
+        if(fc % 500==0){
             jb.addNoise();
-        //}
+        }
+        fc ++;
     }
 
     public class Node extends VerletParticle3D{
@@ -63,7 +63,7 @@ public class Main extends PApplet {
 
 
 
-    public  class  Connection extends VerletConstrainedSpring3D {
+    public  class  Connection extends VerletSpring3D {
 
         Connection(Node n1, Node n2, float len, float strength){
 
@@ -71,16 +71,27 @@ public class Main extends PApplet {
         }
     }
 
+    public  class  Connection2 extends VerletConstrainedSpring3D {
+
+        Connection2(Node n1, Node n2, float len, float strength){
+
+            super(n1, n2, len, strength);
+        }
+    }
+
+
 
     public class JellyBall {
 
         PShape ball;
 
-        int total = 50;
+        int total = 100;
         int[] vertexes2;
         PVector[] plain;
         Node[] nodes;
+        Node core;
         ArrayList<Connection> connections;
+        ArrayList<Connection2> connections2;
 
         JellyBall() {
 
@@ -88,7 +99,9 @@ public class Main extends PApplet {
             plain = new PVector[total * total * 4];
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
-            float cStrength = 0.9F;
+            connections2 = new ArrayList<Connection2>();
+            float cStrength = 0.01F;
+            float cStrength2 = 0.01F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
             float r = 200;
@@ -165,9 +178,26 @@ public class Main extends PApplet {
                     connections.add(sleftbtm);
                 }
             }
-            //nodes[total+1].lock();
-            //nodes[floor((total+1)*total/2)].lock();
-            //nodes[total*total].lock();
+
+            //コネクションを生成、物理系へ登録（中心と球表面のノードをつなぐ）
+            core = new Node(new Vec3D(0,0,0));
+            physics.addParticle(core);
+
+            for(int j = 0; j < (total+1)*(total+1); j++) {
+                if (!((j + 1) % (total + 1) == 0)) {
+                    Vec3D center = nodes[j].sub(core);
+                    float dcenter = center.magnitude();
+                    Connection2 scenter = new Connection2(nodes[j], core, dcenter, cStrength2);
+                    physics.addSpring(scenter);
+                    connections2.add(scenter);
+                }
+            }
+
+
+            nodes[total+1].lock();
+            nodes[floor((total+1)*total/2)].lock();
+            nodes[total*total].lock();
+            core.lock();
         }
 
         void display(){
@@ -199,7 +229,9 @@ public class Main extends PApplet {
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
                     Vec3D v = nodes[j].getNormalized();
-                    v.scaleSelf(map(noise(nodes[j].x,nodes[j].y,nodes[j].z),0,1,-7,10));
+                    v.setZ(0);
+                    noiseDetail(1,0.0F);
+                    v.scaleSelf(map(noise(nodes[j].x,nodes[j].y,nodes[j].z),0,1,-60,60));
                     nodes[j].addSelf(v);
                     nodes[j].unlock();
                 }
