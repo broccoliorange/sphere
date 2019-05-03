@@ -23,7 +23,7 @@ public class Main extends PApplet {
 
 
     public void settings(){
-        size(1280,578, P3D);
+        size(1024,1024, P3D);
     }
 
     public void setup(){
@@ -31,7 +31,7 @@ public class Main extends PApplet {
 
         imageMode(CENTER);
 
-        loadImg = loadImage("colorbar.jpg");
+        loadImg = loadImage("gaju1024.jpg");
 
         jb = new JellyBall();
 
@@ -44,11 +44,11 @@ public class Main extends PApplet {
         physics.update();
 
 
-        lights();
+        //lights();
         //translate(width/2,height/2);
         jb.display();
-        if(fc % 500==0){
-            jb.addNoise();
+        if(fc % 100==0){
+            jb.squeeze();
         }
         fc ++;
     }
@@ -100,11 +100,11 @@ public class Main extends PApplet {
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
             connections2 = new ArrayList<Connection2>();
-            float cStrength = 0.01F;
-            float cStrength2 = 0.01F;
+            float cStrength = 0.1F;
+            float cStrength2 = 0.1F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
-            float r = 200;
+            float r = 120;
 
             for (int i = 0, j = 0; i < vertexes2.length; i += 4, j++) {
                 vertexes2[i + 0] = j + floor(j / total);
@@ -223,15 +223,16 @@ public class Main extends PApplet {
             popMatrix();
         }
 
-        void addNoise(){
-            //ノード位置を撹乱する
+
+        void squeeze(){
+            //赤道を絞ってみる
             for(int j = 0; j < (total+1)*(total+1); j++){
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
                     Vec3D v = nodes[j].getNormalized();
+                    v.scaleSelf(map(abs(v.z),0,1,-50,0));
+                    v.rotateZ( map(v.z,-1,1,-0.05F,0.05F) );
                     v.setZ(0);
-                    noiseDetail(1,0.0F);
-                    v.scaleSelf(map(noise(nodes[j].x,nodes[j].y,nodes[j].z),0,1,-60,60));
                     nodes[j].addSelf(v);
                     nodes[j].unlock();
                 }
