@@ -36,7 +36,7 @@ public class Main extends PApplet {
 
         backImg = loadImage("colorbar.jpg");
         backImg.filter(BLUR,8);
-        texImg = loadImage("gaju1024.jpg");
+        texImg = loadImage("colorbar.jpg");
 
 
         image(backImg,0,0);
@@ -56,14 +56,15 @@ public class Main extends PApplet {
 
 
     public void draw(){
-        background(0);
+        //background(0);
         physics.update();
 
 
         lights();
         translate(width/2,height/2); //PeasyCam有効の時はコメントアウト
         jb.display();
-        if(fc % 20==0){
+        if(fc % 50==0){
+            jb.nodesReset();
             jb.squash();
         }
         fc ++;
@@ -265,10 +266,29 @@ public class Main extends PApplet {
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
                     Vec3D v = nodes[j].getNormalized();
-                    v.scaleSelf(map(abs(v.z),0,1,0,-20));
-                    //v.x -= v.z;
-                    //v.y -= v.z;
+
+                    v.x *= map(abs(v.z),0,1,20,1);
+                    v.y *= map(abs(v.z),0,1,20,1);
+                    v.z *= map(abs(v.z),0,1,0,-20);
+
                     nodes[j].addSelf(v);
+                    nodes[j].unlock();
+                }
+            }
+        }
+
+        void nodesReset(){
+            float r = 120;
+            for(int j = 0; j < (total+1)*(total+1); j++){
+                if( !((j+1)%(total+1)==0)){
+                    nodes[j].lock();
+
+                    float lat = map(floor(j/(total+1)), 0, total, 0, PI);
+                    float lon = map(j % (total+1),0, total,0, TWO_PI);
+                    nodes[j].x = r * sin(lat) * cos(lon);
+                    nodes[j].y = r * sin(lat) * sin(lon);
+                    nodes[j].z = r * cos(lat);
+
                     nodes[j].unlock();
                 }
             }
