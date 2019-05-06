@@ -61,10 +61,10 @@ public class Main extends PApplet {
 
 
         lights();
-        translate(width/2,height/2);
+        translate(width/2,height/2); //PeasyCam有効の時はコメントアウト
         jb.display();
-        if(fc % 100==0){
-            jb.squeeze();
+        if(fc % 20==0){
+            jb.squash();
         }
         fc ++;
     }
@@ -116,8 +116,8 @@ public class Main extends PApplet {
             nodes = new Node[total * total * 4];
             connections = new ArrayList<Connection>();
             connections2 = new ArrayList<Connection2>();
-            float cStrength = 0.1F;
-            float cStrength2 = 0.1F;
+            float cStrength = 0.001F;
+            float cStrength2 = 0.005F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
 
@@ -211,9 +211,9 @@ public class Main extends PApplet {
             }
 
 
-            nodes[total+1].lock();
-            nodes[floor((total+1)*total/2)].lock();
-            nodes[total*total].lock();
+            //nodes[total+1].lock();
+            //nodes[floor((total+1)*total/2)].lock();
+            //nodes[total*total].lock();
             core.lock();
         }
 
@@ -257,8 +257,23 @@ public class Main extends PApplet {
                     nodes[j].unlock();
                 }
             }
-
         }
+
+        void squash(){
+            //縦につぶしてみる
+            for(int j = 0; j < (total+1)*(total+1); j++){
+                if( !((j+1)%(total+1)==0)){
+                    nodes[j].lock();
+                    Vec3D v = nodes[j].getNormalized();
+                    v.scaleSelf(map(abs(v.z),0,1,0,-20));
+                    //v.x -= v.z;
+                    //v.y -= v.z;
+                    nodes[j].addSelf(v);
+                    nodes[j].unlock();
+                }
+            }
+        }
+
     }
 
 
