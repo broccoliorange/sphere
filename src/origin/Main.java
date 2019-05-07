@@ -15,9 +15,9 @@ public class Main extends PApplet {
     //float r;
 
     int fc = 0;
+    int press = 0;
 
     PImage backImg;
-    PImage blurImg;
     PImage texImg;
     PGraphics maskImg; //仕上げスムージングのためのマスク
 
@@ -62,11 +62,14 @@ public class Main extends PApplet {
 
         lights();
         translate(width/2,height/2); //PeasyCam有効の時はコメントアウト
-        jb.display();
-        if(fc % 50==0){
+
+        if(fc % 60 < 15) {
+            press = fc % 15 * 2;
             jb.nodesReset();
-            jb.squash();
+            jb.squash(press);
         }
+
+        jb.display();
         fc ++;
     }
 
@@ -260,16 +263,16 @@ public class Main extends PApplet {
             }
         }
 
-        void squash(){
+        void squash( int press ){
             //縦につぶしてみる
             for(int j = 0; j < (total+1)*(total+1); j++){
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
                     Vec3D v = nodes[j].getNormalized();
 
-                    v.x *= map(abs(v.z),0,1,20,1);
-                    v.y *= map(abs(v.z),0,1,20,1);
-                    v.z *= map(abs(v.z),0,1,0,-20);
+                    v.x *= press * cos(abs(v.z));
+                    v.y *= press * cos(abs(v.z));
+                    v.z *= -press * sin(abs(v.z));
 
                     nodes[j].addSelf(v);
                     nodes[j].unlock();
