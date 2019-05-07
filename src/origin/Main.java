@@ -12,7 +12,7 @@ public class Main extends PApplet {
     VerletPhysics3D physics;
     JellyBall jb;
 
-    //float r;
+    float r;
 
     int fc = 0;
     int press = 0;
@@ -33,22 +33,19 @@ public class Main extends PApplet {
         physics = new VerletPhysics3D();
 
         imageMode(CENTER);
+        strokeWeight(0);
 
         backImg = loadImage("colorbar.jpg");
         backImg.filter(BLUR,8);
         texImg = loadImage("colorbar.jpg");
 
-
-        image(backImg,0,0);
-
-        jb = new JellyBall();
-
-        //r = 120;
+        r = 120;
+        jb = new JellyBall(r);
 
         maskImg=createGraphics(width,height,P2D);
         maskImg.beginDraw();
         maskImg.fill(0);
-        maskImg.ellipse(width/2,height/2,120*2*0.9F,120*2*0.9F);
+        maskImg.ellipse(width/2,height/2,r*2*0.9F,r*2*0.9F);
         maskImg.endDraw();
 
         //cam = new PeasyCam(this,500);
@@ -63,7 +60,7 @@ public class Main extends PApplet {
         lights();
         translate(width/2,height/2); //PeasyCam有効の時はコメントアウト
 
-        if(fc % 60 < 15) {
+        if(fc % 105 < 15) {
             press = fc % 15 * 2;
             jb.nodesReset();
             jb.squash(press);
@@ -104,6 +101,7 @@ public class Main extends PApplet {
     public class JellyBall {
 
         PShape ball;
+        float r;
 
         int total = 100;
         int[] vertexes2;
@@ -113,8 +111,9 @@ public class Main extends PApplet {
         ArrayList<Connection> connections;
         ArrayList<Connection2> connections2;
 
-        JellyBall() {
+        JellyBall( float r ) {
 
+            this.r = r;
             vertexes2 = new int[total * total * 4];
             plain = new PVector[total * total * 4];
             nodes = new Node[total * total * 4];
@@ -142,7 +141,6 @@ public class Main extends PApplet {
 
             //頂点番号と球表面の座標、テクスチャ画像の座標の関連づけ
 
-            float r = 120;
             for(int i = 0; i < vertexes2.length; i++){
                 float lat = map(floor(vertexes2[i]/(total+1)), 0, total, 0, PI);
                 float lon = map(vertexes2[i] % (total+1),0, total,0, TWO_PI);
@@ -191,6 +189,12 @@ public class Main extends PApplet {
                 physics.addSpring(sdiag);
                 connections.add(sdiag);
 
+                Vec3D diag2 = nodes[l].sub(nodes[j]);
+                float ddiag2 = diag2.magnitude();
+                Connection sdiag2 = new Connection(nodes[j], nodes[l], ddiag2, cStrength);
+                physics.addSpring(sdiag2);
+                connections.add(sdiag2);
+
                 if(m >= total*(total +1)){
                     Vec3D leftbtm = nodes[l].sub(nodes[m]);
                     float dleftbtm = leftbtm.magnitude();
@@ -214,10 +218,6 @@ public class Main extends PApplet {
                 }
             }
 
-
-            //nodes[total+1].lock();
-            //nodes[floor((total+1)*total/2)].lock();
-            //nodes[total*total].lock();
             core.lock();
         }
 
@@ -237,7 +237,6 @@ public class Main extends PApplet {
             }
             ball.endShape();
 
-            strokeWeight(0);
             pushMatrix();
             rotateZ(HALF_PI);
             rotateY(HALF_PI);
@@ -281,7 +280,7 @@ public class Main extends PApplet {
         }
 
         void nodesReset(){
-            float r = 120;
+
             for(int j = 0; j < (total+1)*(total+1); j++){
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
