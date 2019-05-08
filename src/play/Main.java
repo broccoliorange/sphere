@@ -1,4 +1,4 @@
-package origin;
+package play;
 
 import peasy.PeasyCam;
 import processing.core.*;
@@ -12,13 +12,13 @@ public class Main extends PApplet {
     VerletPhysics3D physics;
     JellyBall jb;
 
-    float r;
+    float r; //JellyBallの半径
 
-    int fc = 0;
-    int press = 0;
+    int fc = 0; //frame count
+    int press = 0; //JellyBall圧縮の程度（ピクセル）
 
-    PImage backImg;
-    PImage texImg;
+    PImage backImg; //背景
+    PImage texImg; //テクスチャ
     PGraphics maskImg; //仕上げスムージングのためのマスク
 
     PeasyCam cam;
@@ -33,9 +33,9 @@ public class Main extends PApplet {
         physics = new VerletPhysics3D();
 
         imageMode(CENTER);
-        strokeWeight(0);
+        strokeWeight(0); //シェイプにメッシュを描かない
 
-        backImg = loadImage("colorbar.jpg");
+        backImg = loadImage("colorbar.jpg"); //srcと同じフォルダに用意する
         backImg.filter(BLUR,8);
         texImg = loadImage("colorbar.jpg");
 
@@ -68,6 +68,8 @@ public class Main extends PApplet {
 
         jb.display();
         fc ++;
+
+        //saveFrame("frames/######.png"); //processingムービーメーカー用
     }
 
     public class Node extends VerletParticle3D{
@@ -103,13 +105,13 @@ public class Main extends PApplet {
         PShape ball;
         float r;
 
-        int total = 100;
-        int[] vertexes2;
-        PVector[] plain;
-        Node[] nodes;
-        Node core;
-        ArrayList<Connection> connections;
-        ArrayList<Connection2> connections2;
+        int total = 100; //メッシュの縦横分割数
+        int[] vertexes2; //頂点番号を配列として持つ
+        PVector[] plain; //テクスチャの格子座標
+        Node[] nodes; //球表面の頂点座標
+        Node core; //球の中心座標
+        ArrayList<Connection> connections; //球表面のノード同士のバネ
+        ArrayList<Connection2> connections2; //coreと球表面ノードを結ぶバネ
 
         JellyBall( float r ) {
 
@@ -123,7 +125,14 @@ public class Main extends PApplet {
             float cStrength2 = 0.005F;
 
             //頂点番号の並び方の定義(CW　右端＝左端)
-
+            //total=5の場合ならば、
+            //
+            //  1  2  3  4  5
+            //  6  7  8  9 10
+            // 11 12 13 14 15
+            // 16 17 18 19 20
+            // 21 22 23 24 25
+            //
             for (int i = 0, j = 0; i < vertexes2.length; i += 4, j++) {
                 vertexes2[i + 0] = j + floor(j / total);
                 vertexes2[i + 1] = j + floor(j / total) + 1;
@@ -132,12 +141,10 @@ public class Main extends PApplet {
                 if((vertexes2[i+1]+1) % (total+1) == 0){
                     vertexes2[i+1] -= total;
                 }
-
                 if((vertexes2[i+2]+1) % (total+1) == 0){
                     vertexes2[i+2] -= total;
                 }
             }
-
 
             //頂点番号と球表面の座標、テクスチャ画像の座標の関連づけ
 
@@ -162,7 +169,7 @@ public class Main extends PApplet {
                 }
             }
 
-            //コネクションを生成、物理系へ登録
+            //バネを生成、物理系へ登録
             for (int i = 0; i < vertexes2.length; i += 4) {
                 int j = vertexes2[i];
                 int k = vertexes2[i + 1];
@@ -204,7 +211,7 @@ public class Main extends PApplet {
                 }
             }
 
-            //コネクションを生成、物理系へ登録（中心と球表面のノードをつなぐ）
+            //バネを生成、物理系へ登録（coreと球表面のノード）
             core = new Node(new Vec3D(0,0,0));
             physics.addParticle(core);
 
@@ -218,15 +225,25 @@ public class Main extends PApplet {
                 }
             }
 
-            core.lock();
+            core.lock(); //coreをロックしてボールを空間につなぎ留めておく
         }
 
         void display(){
+            //背景と球の描画
             image(backImg,0,0);
 
             ball = createShape();
 
             ball.beginShape(QUADS);
+            //
+            //  1  2  3  4  5
+            //  6  7  8  9 10
+            // 11 12 13 14 15
+            // 16 17 18 19 20
+            // 21 22 23 24 25
+            //
+            //(1,2,7,6),(2,3,8,7),(3,4,9,8),(4,1,6,9),(6,7,12,11),…,(19,16,21,24)
+            //
             for (int i = 0; i < vertexes2.length; i++) {
                 if (i % 4 == 0) {
                     ball.texture(texImg);
@@ -280,7 +297,7 @@ public class Main extends PApplet {
         }
 
         void nodesReset(){
-
+            //ノード座標の初期化
             for(int j = 0; j < (total+1)*(total+1); j++){
                 if( !((j+1)%(total+1)==0)){
                     nodes[j].lock();
@@ -301,6 +318,6 @@ public class Main extends PApplet {
 
 
     public static void main(String[] args){
-        PApplet.main("origin.Main");
+        PApplet.main("play.Main");
     }
 }
