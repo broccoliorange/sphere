@@ -7,7 +7,7 @@ import toxi.physics3d.*;
 import java.util.ArrayList;
 
 
-public class Main extends PApplet {
+public class Main extends PApplet {  //PDEではコメントアウト
 
     VerletPhysics3D physics;
     JellyBall jb;
@@ -319,5 +319,5 @@ public class Main extends PApplet {
 
     public static void main(String[] args){
         PApplet.main("play.Main");
-    }
-}
+    }  //PDEではコメントアウト
+}  //PDEではコメントアウト
