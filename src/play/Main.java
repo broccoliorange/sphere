@@ -1,4 +1,4 @@
-package play;
+package play;  //PDEではコメントアウト
 
 import peasy.PeasyCam;
 import processing.core.*;
